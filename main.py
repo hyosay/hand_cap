@@ -3,15 +3,20 @@ import mediapipe as mp
 import numpy as np
 import time, os
 
-actions = ['no', 'thank', 'sorry']
+# 모델이름 생성
+actions = ['spin', 'come', 'one_come']
 seq_length = 30
 secs_for_action = 30
 
 
 mp_drawing = mp.solutions.drawing_utils
+#mediapipe 손 솔루션
 mp_hands = mp.solutions.hands
+mp_drawing_styles = mp.solutions.drawing_styles
+
 hands = mp_hands.Hands(
-    max_num_hands=2,
+    max_num_hands=1,
+    #기본값0.5
     min_detection_confidence=0.5,
     min_tracking_confidence=0.5)
 cap = cv2.VideoCapture(0)
@@ -25,9 +30,11 @@ while cap.isOpened():
 
         img = cv2.flip(img, 1)
 
-        cv2.putText(img, f"wating for collecting {action.upper()} action...", org = (10, 30),
+        # 영상에 txt출력하기
+        cv2.putText(img, f"wating for collecting {action.upper()} action...", org = (50, 50),
                     fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color = (255, 255, 255), thickness = 2)
-        cv2.imshow("img", img)
+        cv2.imshow("train_model", img)
+        #대기시간3초
         cv2.waitKey(3000)
 
         start_time = time.time()
@@ -47,8 +54,7 @@ while cap.isOpened():
 
                     # Compute angles between joints
                     v1 = joint[[0, 1, 2, 3, 0, 5, 6, 7, 0, 9, 10, 11, 0, 13, 14, 15, 0, 17, 18, 19], :3]  # Parent joint
-                    v2 = joint[[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
-                         :3]  # Child joint
+                    v2 = joint[[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],:3]  # Child joint
                     v = v2 - v1  # [20, 3]
                     # Normalize v
                     v = v / np.linalg.norm(v, axis=1)[:, np.newaxis]
@@ -67,9 +73,12 @@ while cap.isOpened():
 
                     data.append(d)
 
-                    mp_drawing.draw_landmarks(img, res, mp_hands.HAND_CONNECTIONS)
-
-            cv2.imshow('img', img)
+                    mp_drawing.draw_landmarks(img,
+                                              res,
+                                              mp_hands.HAND_CONNECTIONS,
+                                              mp_drawing_styles.get_default_hand_landmarks_style(),
+                                              mp_drawing_styles.get_default_hand_connections_style())
+            cv2.imshow('train_data', img)
             if cv2.waitKey(1) == ord('q'):
                 break
 
